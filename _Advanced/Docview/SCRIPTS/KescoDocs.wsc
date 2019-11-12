@@ -1,0 +1,140 @@
+<?xml version="1.0"?>
+<component>
+
+<registration
+	description="KescoDocs"
+	progid="KescoDocs"
+	version="1.00"
+	classid="{1716f4e2-5bd2-4a97-941d-b3783c14ce25}"
+>
+</registration>
+
+<public>
+	<method name="TestImage">
+		<PARAMETER name="Server"/>
+		<PARAMETER name="Path"/>
+		<PARAMETER name="DocImageCode"/>
+	        <PARAMETER name="DocImageType"/>
+	</method>
+	<method name="CreateDocImage">
+		<PARAMETER name="Server"/>
+		<PARAMETER name="Path"/>
+		<PARAMETER name="FileName"/>
+		<PARAMETER name="DocImageCode"/>
+	        <PARAMETER name="DocImageType"/>
+	</method>
+	<method name="CopyDocImage">
+		<PARAMETER name="DocImageCode"/>
+	        <PARAMETER name="DocImageType"/>
+		<PARAMETER name="Server"/>
+		<PARAMETER name="Path"/>
+		<PARAMETER name="NetPathFrom"/>
+	</method>
+	<method name="GetIP">
+		<PARAMETER name="HostName"/>
+	</method>
+	<method name="GetMAC">
+		<PARAMETER name="HostName"/>
+	</method>
+	<method name="IsWorkingTest">
+	</method>
+</public>
+
+<script language="VBScript">
+<![CDATA[
+
+Function TestImage(Server, Path,  DocImageCode, DocImageType)
+
+	ImagName = DocImageCode
+	If Len(ImagName) < 8 Then ImagName = String(8 - Len(ImagName), "0") & ImagName
+	ImagDir = Path & "\" & Mid(ImagName, 1, Len(ImagName) - 4)
+	ImagName = ImagDir & "\" & ImagName & "." & DocImageType
+
+	Set objWMIService = CreateObject("WbemScripting.SWbemLocator").ConnectServer (Server, "root\cimv2", , , , "kerberos:" & Server)
+	objWMIService.Security_.ImpersonationLevel = 1 
+
+	SQL = Replace("SELECT * FROM CIM_DataFile Where Name = '" & ImagName & "'","\","\\")
+	Set colFiles = objWMIService.ExecQuery(SQL, "WQL", wbemFlagReturnImmediately + wbemFlagForwardOnly)
+	If colFiles.Count < 1 Then
+		TestImage = "Error (File doesn't exist)"
+	Else
+		For Each objFile in colFiles
+			TestImage = "OK" & objFile.FileSize & " " & objFile.LastModified
+		Next
+	End If
+
+
+End Function
+
+Function CreateDocImage(Server, Path, FileName, DocImageCode, DocImageType)
+
+	ImagName = DocImageCode
+	If Len(ImagName) < 8 Then ImagName = String(8 - Len(ImagName), "0") & ImagName
+	ImagDir = Path & "\" & Mid(ImagName, 1, Len(ImagName) - 4)
+	ImagName = ImagDir & "\" & ImagName & "." & DocImageType
+
+	Set objWMIService = CreateObject("Scripting.FileSystemObject")
+	
+	If Not objWMIService.FolderExists(ImagDir) Then
+		objWMIService.CreateFolder(ImagDir)
+	End If
+
+
+	objWMIService.CopyFile Path & "\Temp\" & FileName, ImagName, True	
+	If Error <> 0 Then
+		CreateDocImage = "Error create directory " & Error			
+		Set objWMIService = Nothing
+		Exit Function
+	End If
+
+	objWMIService.DeleteFile Path & "\Temp\" & FileName, True
+	
+	Set File = objWMIService.GetFile(ImagName) 
+	
+	
+	CreateDocImage = "OK" & File.Size & " " & File.DateLastModified
+
+	Set File = Nothing
+	Set objWMIService = Nothing
+End Function
+
+Function CopyDocImage(DocImageCode, DocImageType, Server, Path, NetPathFrom)
+
+	CopyDocImage = "ERROR"
+	
+End Function
+
+Function GetIP(HostName)
+
+	GetIP = ""
+	For Each Net in GetObject("winmgmts:\\" & HostName).InstancesOf("Win32_NetworkAdapterConfiguration")
+		If Net.IPEnabled = True Then
+			For Each IP in Net.IPAddress
+	                	If InStr(GetIP,IP) = 0 Then GetIP = GetIP & " " & IP
+			Next
+		End If
+	Next
+
+End Function
+
+Function GetMAC(HostName)
+
+	GetMAC = ""
+	For Each Net in GetObject("winmgmts:\\" & HostName).InstancesOf("Win32_NetworkAdapterConfiguration")
+		If Net.IPEnabled = True Then
+                	If InStr(GetMAC,Net.MacAddress) = 0 Then GetMAC = GetMAC & " " & Net.MacAddress
+		End If
+	Next
+
+End Function
+
+Function IsWorkingTest()
+
+	IsWorkingTest = "OK"
+
+End Function
+
+]]>
+</script>
+
+</component>

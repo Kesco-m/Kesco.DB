@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<component>
+
+<registration
+	description="KescoProcess"
+	progid="KescoProcess"
+	version="1.00"
+	classid="{3ba9f6cd-f1e8-4bf8-9281-479957c8f0a7}"
+>
+</registration>
+
+<public>
+	<method name="FileSize">
+		<PARAMETER name="Server"/>
+		<PARAMETER name="FullFileName"/>
+	</method>
+</public>
+
+<script language="VBScript">
+<![CDATA[
+
+Function FileSize(Server, FullFileName)
+	FileSize = 100 
+End Function
+
+
+]]>
+</script>
+
+</component>
